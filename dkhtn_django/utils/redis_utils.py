@@ -1,7 +1,10 @@
 from django_redis import get_redis_connection
 from django.conf import settings
 
-redis_clis = [get_redis_connection(str(i)) for i in range(16)]
+redis_clis = {
+    'default': get_redis_connection('default'),
+    '1': get_redis_connection('1'),
+}
 
 
 def redis_get(db_index, key):
