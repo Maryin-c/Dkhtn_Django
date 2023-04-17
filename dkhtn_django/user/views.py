@@ -1,8 +1,10 @@
 # from django.contrib.auth.models import User
+import json
+
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib import auth
-
+from ..utils.json_req_parser import JsonReq
 from .rabbit.RabbitMQ import rabbit_mq
 from .models import User
 from .wrappers import wrapper_set_login
@@ -43,11 +45,12 @@ def rsa_get(request):
 @wrapper_set_login
 def login(request):
     try:
-        username = request.POST.get('uname')
-        password = request.POST.get('password')
+        _request = JsonReq(request.body)
+        username = _request.POST.get('uname')
+        password = _request.POST.get('password')
         user = auth.authenticate(username=username, password=password)
         # 登录信息登记
-        request.userinfo = User(user).userinfo()
+        request.userinfo = user.userinfo()
         if user is None:
             response = {
                 "code": 1,
