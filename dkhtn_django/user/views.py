@@ -7,7 +7,7 @@ from django.contrib import auth
 from ..utils.json_req_parser import JsonReq
 from .rabbit.RabbitMQ import rabbit_mq
 from .models import User
-from .wrappers import wrapper_set_login
+from .wrappers import wrapper_set_login, wrapper_register
 
 
 def email_send(request):
@@ -63,6 +63,53 @@ def login(request):
                 "message": "登录成功",
             }
             return JsonResponse(response)
+    except Exception as e:
+        raise e
+        # response = {
+        #     "code": 114514,
+        #     "message": e.__str__(),
+        # }
+        # return JsonResponse(response)
+
+
+# 注册，流程为->（前端）先调用获取邮箱验证码接口->（后端）发送验证邮件，建立session id，存储验证码，反馈前端
+# ->（前端）调用用户注册接口->（后端）检验session id，检验验证码，注册成功则直接登录
+@wrapper_register
+def register(request):
+    try:
+        _request = JsonReq(request.body)
+        username = _request.POST.get('uname')
+        password = _request.POST.get('password')
+        email = _request.POST.get('email')
+        avatar = _request.POST.get('avatar')
+        # 检查重名
+        old_user = User.objects.filter(username=username)
+        if old_user:
+            response = {
+                "code": 2,
+                "message": "用户名已存在",
+            }
+            return JsonResponse(response)
+        # 检查邮箱重复
+        old_user = User.objects.filter(email=email)
+        if old_user:
+            response = {
+                "code": 3,
+                "message": "邮箱已存在",
+            }
+            return JsonResponse(response)
+        # 进行注册
+        user = User.objects.create_user(username=username,
+                                        password=password,
+                                        avatar=avatar,
+                                        email=email)
+        # 登录信息登记
+        request.userinfo = user.userinfo()
+        response = {
+            "code": 0,
+            "message": "注册成功",
+        }
+        return JsonResponse(response)
     except Exception as e:
         raise e
         # response = {
