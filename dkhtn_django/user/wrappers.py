@@ -38,6 +38,19 @@ def redis_login_update(request, ret):
     redis_utils.redis_set(settings.REDIS_DB_LOGIN, request.userinfo['id'], new_session_id)
 
 
+# 将生成的验证码置入session中
+def verify_session_get(request):
+    # 对于忘记密码与注册，用户为未登录状态下操作，没有session id
+    # 对于修改密码与修改邮箱，用户为已登录状态下操作，拥有session id
+    # # session id唯一，对于已有的不应修改，对于没有的应当设置新的
+    # session_id = None
+    # if settings.REDIS_SESSION_NAME in request.COOKIES.keys():
+    session_id = request.COOKIES.get(settings.REDIS_SESSION_NAME)
+    if session_id is None:
+        session_id = uuid.uuid4().hex
+    return session_id
+
+
 # 邮箱验证码检验
 def verify_code_check(request):
     verify_code = redis_utils.redis_get(settings.REDIS_DB_VERIFY, request.COOKIES[settings.REDIS_SESSION_NAME])
@@ -92,6 +105,22 @@ def wrapper_register(func):
         if ret_code_check(ret):
             verify_code_delete(request)
             redis_login_update(request, ret)
+        return ret
+
+    return inner
+
+
+def wrapper_verify_send(func):
+    def inner(request, *args, **kwargs):
+        # 在调用view函数前执行
+        # 获取正确的session id
+        session_id = verify_session_get(request)
+        # 调用view函数
+        ret = func(request, session_id, *args, **kwargs)
+        # 在调用view函数后执行
+        # 写入redis，完成登录，redis中删除使用过的验证码
+        if ret_code_check(ret):
+            ret.set_cookie(settings.REDIS_SESSION_NAME, session_id)
         return ret
 
     return inner

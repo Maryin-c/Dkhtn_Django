@@ -7,10 +7,11 @@ from django.contrib import auth
 from ..utils.json_req_parser import JsonReq
 from .rabbit.RabbitMQ import rabbit_mq
 from .models import User
-from .wrappers import wrapper_set_login, wrapper_register
+from .wrappers import wrapper_set_login, wrapper_register, wrapper_verify_send
 
 
-def email_send(request):
+@wrapper_verify_send
+def email_send(request, session_id):
     email = request.GET.get('email')
     if email is None:
         ret = {
@@ -19,7 +20,10 @@ def email_send(request):
         }
         return JsonResponse(ret)
     else:
-        rabbit_mq(email)
+        rabbit_mq(json.dumps({
+            "email": email,
+            "session_id": session_id,
+        }))
         ret = {
             "code": 0,
             "message": "验证码发送成功",
