@@ -58,7 +58,7 @@ def verify_code_check(request):
     if verify_code is None or verify_code != _request.POST.get('email_sms'):
         response = {
             "code": 1,
-            "message": "邮箱校验码错误或过期",
+            "message": "邮箱验证码错误或已失效",
         }
         return JsonResponse(response)
     else:
@@ -122,5 +122,34 @@ def wrapper_verify_send(func):
         if ret_code_check(ret):
             ret.set_cookie(settings.REDIS_SESSION_NAME, session_id)
         return ret
+
+    return inner
+
+
+def wrapper_verify_check(func):
+    """
+    检验邮箱验证码是否正确
+    :param func:
+    :return:
+    """
+    def inner(request, *args, **kwargs):
+        # 在调用view函数前执行
+        # 验证邮件
+        ret = verify_code_check(request)
+        if ret is not None:
+            return ret
+        else:
+            response = {
+                "code": 0,
+                "message": "success",
+            }
+            return JsonResponse(response)
+        # 调用view函数
+        # ret = func(request, *args, **kwargs)
+        # 在调用view函数后执行
+        # 写入redis，完成登录，redis中删除使用过的验证码
+        # if ret_code_check(ret):
+        #     ret.set_cookie(settings.REDIS_SESSION_NAME, session_id)
+        # return ret
 
     return inner

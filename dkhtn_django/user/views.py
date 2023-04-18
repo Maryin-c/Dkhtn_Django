@@ -7,7 +7,8 @@ from django.contrib import auth
 from ..utils.json_req_parser import JsonReq
 from .rabbit.RabbitMQ import rabbit_mq
 from .models import User
-from .wrappers import wrapper_set_login, wrapper_register, wrapper_verify_send
+from .wrappers import wrapper_set_login, wrapper_register,\
+    wrapper_verify_send, wrapper_verify_check
 
 
 @wrapper_verify_send
@@ -31,7 +32,13 @@ def email_send(request, session_id):
         return JsonResponse(ret)
 
 
+@wrapper_verify_check
 def email_check(request):
+    """
+    功能在装饰器中已经完成
+    :param request:
+    :return:
+    """
     pass
 
 
