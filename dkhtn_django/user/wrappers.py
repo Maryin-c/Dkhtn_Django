@@ -41,10 +41,7 @@ def redis_login_update(request, ret):
 # 邮箱验证码检验
 def verify_code_check(request):
     verify_code = redis_utils.redis_get(settings.REDIS_DB_VERIFY, request.COOKIES[settings.REDIS_SESSION_NAME])
-    # verify_code = redis_utils.redis_get(settings.REDIS_DB_VERIFY, "key")
     _request = JsonReq(request.body)
-    print(verify_code)
-    print(_request.POST.get('email_sms'))
     if verify_code is None or verify_code != _request.POST.get('email_sms'):
         response = {
             "code": 1,
