@@ -8,7 +8,10 @@ redis_clis = {
 
 
 def redis_get(db_index, key):
-    return redis_clis[db_index].get(key)
+    res = redis_clis[db_index].get(key)
+    if res is not None:
+        res = res.decode('utf-8')
+    return res
 
 
 def redis_set(db_index, key, value, timeout=settings.REDIS_TIMEOUT):
