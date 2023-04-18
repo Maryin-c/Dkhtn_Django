@@ -55,6 +55,11 @@ def verify_code_check(request):
         return None
 
 
+# 及时删除redis中的邮箱验证码
+def verify_code_delete(request):
+    redis_utils.redis_delete(settings.REDIS_DB_VERIFY, request.COOKIES[settings.REDIS_SESSION_NAME])
+
+
 # todo
 # login接口专用，设置为无条件登录，并且拒绝多点登录
 # 维持登陆状态的redis映射：session_id->{id, name, avatar, email}
@@ -86,8 +91,9 @@ def wrapper_register(func):
         # 调用view函数
         ret = func(request, *args, **kwargs)
         # 在调用view函数后执行
-        # 写入redis，完成登录
+        # 写入redis，完成登录，redis中删除使用过的验证码
         if ret_code_check(ret):
+            verify_code_delete(request)
             redis_login_update(request, ret)
         return ret
 
